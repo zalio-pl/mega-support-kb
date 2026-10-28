@@ -1,23 +1,22 @@
-// causes.ts places every report by tenant, so a one-day move lands under `parser`. The desk's own
-// reading (desk-notes.json) says otherwise: no swap, a different bug.
+// The desk counts a report under the cause its tenant gives it (causes.ts), so a one-day move stays
+// in `parser`. The desk also read those as a separate problem (desk-notes.json): `shift` counts them
+// again, as a subset.
 import { causeOf, type Report, type Tenant } from '#lib/kb/causes';
 
 export type Problem = 'parser' | 'hint' | 'shift';
 export const PROBLEMS: readonly Problem[] = ['parser', 'hint', 'shift'];
 
-export function problemOf(r: Report, t: Tenant | undefined, shifted: readonly string[]): Problem | null {
-  return shifted.includes(r.id) ? 'shift' : causeOf(r, t);
-}
-
-export type ProblemGroup = { problem: Problem | 'unplaced'; reports: Report[]; tenants: number; firstSeen: string; lastSeen: string };
+export type ProblemGroup = { problem: Problem; reports: Report[]; tenants: number; firstSeen: string; lastSeen: string };
 
 export function groupByProblem(reports: Report[], tenantOf: (r: Report) => Tenant | undefined, shifted: readonly string[]): ProblemGroup[] {
-  const order: ProblemGroup['problem'][] = [...PROBLEMS, 'unplaced'];
-  return order
-    .map((problem) => {
-      const rs = reports.filter((r) => (problemOf(r, tenantOf(r), shifted) ?? 'unplaced') === problem);
-      const days = rs.map((r) => r.receivedAt.slice(0, 10)).sort();
-      return { problem, reports: rs, tenants: new Set(rs.map((r) => r.tenant)).size, firstSeen: days[0], lastSeen: days[days.length - 1] };
-    })
-    .filter((g) => g.reports.length > 0);
+  const member: Record<Problem, (r: Report) => boolean> = {
+    parser: (r) => causeOf(r, tenantOf(r)) === 'parser',
+    hint: (r) => causeOf(r, tenantOf(r)) === 'hint',
+    shift: (r) => shifted.includes(r.id),
+  };
+  return PROBLEMS.map((problem) => {
+    const rs = reports.filter(member[problem]);
+    const days = rs.map((r) => r.receivedAt.slice(0, 10)).sort();
+    return { problem, reports: rs, tenants: new Set(rs.map((r) => r.tenant)).size, firstSeen: days[0], lastSeen: days[days.length - 1] };
+  }).filter((g) => g.reports.length > 0);
 }
