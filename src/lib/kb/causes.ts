@@ -42,6 +42,15 @@ export function causeOf(r: Pick<Report, 'channel'>, t: Tenant | undefined): Caus
   return r.channel === 'form' && DATE_HINT[t.form].startsWith('MM') ? 'hint' : 'parser';
 }
 
+// The desk reads some reports as a one-day move (desk-notes.json). That isn't a flipped month,
+// so no parser or form fix reaches it, whichever tenant it came from.
+export type Problem = Cause | 'shift';
+export const PROBLEMS: readonly Problem[] = [...CAUSES, 'shift'];
+
+export function problemOf(r: Pick<Report, 'id' | 'channel'>, t: Tenant | undefined, oneDayMove: readonly string[]): Problem | null {
+  return oneDayMove.includes(r.id) ? 'shift' : causeOf(r, t);
+}
+
 export function sameCause(a: Pick<Report, 'channel'>, ta: Tenant | undefined, b: Pick<Report, 'channel'>, tb: Tenant | undefined): boolean {
   const ca = causeOf(a, ta);
   return ca !== null && ca === causeOf(b, tb);
@@ -53,7 +62,7 @@ export function uniqueById(reports: Report[]): Report[] {
 }
 
 export type CauseGroup = {
-  cause: Cause | 'unplaced';
+  cause: Problem | 'unplaced';
   reports: Report[];
   // What intake tagged these reports as: tag → count.
   taggedAs: Record<string, number>;
@@ -63,10 +72,14 @@ export type CauseGroup = {
   mergedInto: number[];
 };
 
-export function groupByCause(reports: Report[], tenantOf: (r: Report) => Tenant | undefined): CauseGroup[] {
+export function groupByCause(
+  reports: Report[],
+  tenantOf: (r: Report) => Tenant | undefined,
+  classify: (r: Report, t: Tenant | undefined) => Problem | null = causeOf,
+): CauseGroup[] {
   const byCause = new Map<CauseGroup['cause'], Report[]>();
   for (const r of reports) {
-    const cause = causeOf(r, tenantOf(r)) ?? 'unplaced';
+    const cause = classify(r, tenantOf(r)) ?? 'unplaced';
     byCause.set(cause, [...(byCause.get(cause) ?? []), r]);
   }
   return [...byCause.entries()]

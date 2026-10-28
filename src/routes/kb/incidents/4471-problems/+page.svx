@@ -4,47 +4,58 @@ title: '#4471 · three problems, not one'
 owner: zalio-pl
 status: open
 reviewed: 2026-10-28
-signature: zalio-pl
+signature: v1.eyJzdWIiOiI2MzE3IiwiYXVkIjoiY2hhbGxlbmdlOndoYXQtaXQtc2hvd3MiLCJpYXQiOjE3OTMxODc2NTYsImV4cCI6MTc5MzI3NDA1Nn0.kCPbzGNE1MKGqiYQW5-nDZMukiqZAy-rWlEjrZETqo8
 ---
 
 <script>
-  import CauseTable from '#lib/kb/CauseTable.svelte';
+  import ProblemTable from '#lib/kb/ProblemTable.svelte';
   import Callout from '#lib/kb/Callout.svelte';
   import RenderStamp from '#lib/kb/RenderStamp.svelte';
+
+  const repo = 'https://github.com/zalio-pl/mega-support-kb/issues';
+  const filed = {
+    parser: { href: `${repo}/1`, title: '#1', state: 'fixed' },
+    hint: { href: `${repo}/2`, title: '#2', state: "won't fix" },
+    shift: { href: `${repo}/3`, title: '#3', state: 'open' },
+  };
 </script>
 
-[#4471](/kb/incidents/4471) said one issue, one fix queued. Its own cause table shows a second
-cause, and its footnote holds a third. Each needs its own fix, so each has its own ticket.
-Engineering closed #4471 on 5 October: the parser is fixed and booking-v3 is retired. The third
-problem is still open.
-
-<CauseTable ticket={4471} />
-
-| problem | ticket | state |
-|---|---|---|
-| `parser`: the shared parser reads day-first dates month first | [#1](https://github.com/zalio-pl/mega-support-kb/issues/1) | fixed |
-| `hint`: booking-v3 tells day-first tenants to type `MM/DD/YYYY` | [#2](https://github.com/zalio-pl/mega-support-kb/issues/2) | won't fix: booking-v3 retired |
-| one-day move: dates shift a day earlier across time zones | [#3](https://github.com/zalio-pl/mega-support-kb/issues/3) | open |
+[#4471](/kb/incidents/4471) was merged as one issue and closed on 5 October: engineering fixed the
+parser and retired the booking-v3 form. Read report by report, the ticket holds three problems,
+and the fixes cover only two of them.
 
 <Callout kind="warn">
-Closing #4471 did not close the one-day move. Those reports are filed under <code>parser</code> by
-tenant and only footnoted, so the parser fix hid them. They keep coming until a time-zone fix
-ships.
+Dates that move by <b>one day</b> are still open. Neither fix touches them, and they had no ticket.
 </Callout>
 
 ## The three problems
 
-- **`parser`**: every tenant writes the day first and the parser reads the month first. Day and
-  month swap: 7 April arrives as 4 July.
-- **`hint`**: people type month first, as the booking-v3 hint tells them, and the form reads it
-  day first. It looks like the parser bug, but the fix belongs in the form.
-- **one-day move**: no swap. Tuesday shows as Monday; Lisbon gets Tuesday and Toronto Monday. Most
-  likely a time zone or DST conversion.
+<ProblemTable ticket={4471} filed={filed} />
 
-## Why they were merged
+- **parser.** The shared parser read every date month first, and every tenant here writes the day
+  first, so 7 April came out as 4 July. Fixed: `fix(dates): parse dd/mm for eu locales`.
+- **hint.** booking-v3's form prints `MM/DD/YYYY` under the date field but reads the date day
+  first. People type what the hint says. Only the `form` channel of booking-v3 tenants. Won't fix:
+  the form is retired.
+- **shift.** The date moves by a day: 12 May shows as 11 May, Tuesday as Monday, one meeting on
+  different days in Lisbon and Toronto. That is a time-zone shift, not a flipped month. The desk
+  already noted these (`desk-notes.json`), but `causeOf` files every report by tenant, so they
+  were counted under the parser and closed with it.
 
-[Decision 0001](/kb/decisions/0001-dedupe-by-subject) merges on subject line alone. All three
-problems produce the same subjects, so subject matching cannot keep them apart. Splitting them
-needs the tenant, the channel and the body.
+## Why one ticket hid three
+
+- The reports came in under a dozen different subject lines, so [decision 0001](/kb/decisions/0001-dedupe-by-subject)
+  would have kept them apart. They were merged by topic instead, "dates", most of them in one
+  sitting on 2 July. Nobody grouped them by cause.
+- Intake's tag is a guess from the reporter's browser. It disagrees with the tenant's form, so
+  the tags in the table don't add up to the problems.
+- The export repeats some reports across pages. Counts here are by report id, once each.
+
+## For the desk
+
+- Merge by cause, not by topic: a report joins a ticket when `problemOf` puts it there.
+- A report that reads as a one-day move goes to the shift ticket, not #4471.
+- [Triage: duplicate reports](/kb/triage/dedupe) was last reviewed in June 2024 and says "when
+  unsure, merge". Re-read it before the next big ticket.
 
 <RenderStamp {signature} />
