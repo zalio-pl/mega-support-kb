@@ -1,0 +1,50 @@
+---
+layout: runbook
+title: '#4471 · three problems, not one'
+owner: zalio-pl
+status: open
+reviewed: 2026-10-28
+signature: zalio-pl
+---
+
+<script>
+  import CauseTable from '#lib/kb/CauseTable.svelte';
+  import Callout from '#lib/kb/Callout.svelte';
+  import RenderStamp from '#lib/kb/RenderStamp.svelte';
+</script>
+
+[#4471](/kb/incidents/4471) said one issue, one fix queued. Its own cause table shows a second
+cause, and its footnote holds a third. Each needs its own fix, so each has its own ticket.
+Engineering closed #4471 on 5 October: the parser is fixed and booking-v3 is retired. The third
+problem is still open.
+
+<CauseTable ticket={4471} />
+
+| problem | ticket | state |
+|---|---|---|
+| `parser`: the shared parser reads day-first dates month first | [#1](https://github.com/zalio-pl/mega-support-kb/issues/1) | fixed |
+| `hint`: booking-v3 tells day-first tenants to type `MM/DD/YYYY` | [#2](https://github.com/zalio-pl/mega-support-kb/issues/2) | won't fix: booking-v3 retired |
+| one-day move: dates shift a day earlier across time zones | [#3](https://github.com/zalio-pl/mega-support-kb/issues/3) | open |
+
+<Callout kind="warn">
+Closing #4471 did not close the one-day move. Those reports are filed under <code>parser</code> by
+tenant and only footnoted, so the parser fix hid them. They keep coming until a time-zone fix
+ships.
+</Callout>
+
+## The three problems
+
+- **`parser`**: every tenant writes the day first and the parser reads the month first. Day and
+  month swap: 7 April arrives as 4 July.
+- **`hint`**: people type month first, as the booking-v3 hint tells them, and the form reads it
+  day first. It looks like the parser bug, but the fix belongs in the form.
+- **one-day move**: no swap. Tuesday shows as Monday; Lisbon gets Tuesday and Toronto Monday. Most
+  likely a time zone or DST conversion.
+
+## Why they were merged
+
+[Decision 0001](/kb/decisions/0001-dedupe-by-subject) merges on subject line alone. All three
+problems produce the same subjects, so subject matching cannot keep them apart. Splitting them
+needs the tenant, the channel and the body.
+
+<RenderStamp {signature} />
