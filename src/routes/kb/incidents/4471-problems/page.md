@@ -1,6 +1,6 @@
 # page.png
 
-Screenshot of `/kb/incidents/4471/problems` as the desk sees it: `npm run build`, `vite preview`, headless Chrome at 900 px, 2026-10-28.
+Screenshot of `/kb/incidents/4471-problems` as the desk sees it: `npm run build`, `vite preview`, headless Chrome at 900 px, 2026-10-28.
 
 - Title: #4471 · three problems, not one · owner zalio-pl · status open · reviewed 2026-10-28
 - 412 reports in #4471 (15 duplicate export rows dropped) · 3 problems
