@@ -1,0 +1,51 @@
+---
+layout: runbook
+title: '#4471 · three problems, not one'
+owner: zalio-pl
+status: open
+reviewed: 2026-10-28
+signature: zalio-pl
+---
+
+<script>
+  import ProblemTable from '#lib/kb/ProblemTable.svelte';
+  import Callout from '#lib/kb/Callout.svelte';
+  import RenderStamp from '#lib/kb/RenderStamp.svelte';
+</script>
+
+[#4471](/kb/incidents/4471) says one issue, one fix queued. Its own cause table already shows a
+second cause, and its footnote hides a third. Each one needs its own fix, so each now has its own
+ticket.
+
+<ProblemTable ticket={4471} repo="https://github.com/zalio-pl/mega-support-kb" issues={{ parser: 1, hint: 2, shift: 3 }} />
+
+<Callout kind="warn">
+The queued parser fix closes only the <code>parser</code> row. Reports from the other two rows
+keep coming until their own fixes ship.
+</Callout>
+
+## The three problems
+
+- **`parser`**: the shared parser reads every date month first, and every tenant writes the day
+  first. Day and month swap: 7 April arrives as 4 July.
+- **`hint`**: booking-v3 prints `MM/DD/YYYY` under its date field. People at day-first tenants
+  type month first, as told, and the form reads it day first. It looks like the parser bug, but
+  the fix belongs in the form.
+- **`shift`**: no swap. The date moves one day earlier (Tuesday shows as Monday, Lisbon gets
+  Tuesday and Toronto gets Monday). Most likely a time zone or DST conversion. The desk had
+  already read these reports as one-day moves.
+
+## How the reports were placed
+
+- Each report is counted once, by id. The ticket export repeats some rows.
+- The tenant decides the cause, not the reporter's browser. Intake's tag is a guess and is
+  ignored here (see `causes.ts`).
+- The desk's one-day reading (`desk-notes.json`) beats placement by tenant.
+
+## Why they were merged
+
+[Decision 0001](/kb/decisions/0001-dedupe-by-subject) merges on subject line alone. All three
+problems produce the same subjects ("wrong day", "date is wrong"), so subject matching cannot keep
+them apart. Splitting them needs the tenant, the channel and the body.
+
+<RenderStamp {signature} />
