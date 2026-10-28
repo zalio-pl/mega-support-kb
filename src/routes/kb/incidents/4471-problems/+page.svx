@@ -8,47 +8,43 @@ signature: zalio-pl
 ---
 
 <script>
-  import ProblemTable from '#lib/kb/ProblemTable.svelte';
+  import CauseTable from '#lib/kb/CauseTable.svelte';
   import Callout from '#lib/kb/Callout.svelte';
   import RenderStamp from '#lib/kb/RenderStamp.svelte';
 </script>
 
-[#4471](/kb/incidents/4471) said one issue, one fix queued. Its own cause table already showed a
-second cause, and its footnote hid a third. Each one needs its own fix, so each has its own ticket.
+[#4471](/kb/incidents/4471) said one issue, one fix queued. Its own cause table shows a second
+cause, and its footnote holds a third. Each needs its own fix, so each has its own ticket.
 Engineering closed #4471 on 5 October: the parser is fixed and booking-v3 is retired. The third
 problem is still open.
 
-<ProblemTable ticket={4471} repo="https://github.com/zalio-pl/mega-support-kb" issues={{ parser: 1, hint: 2, shift: 3 }} states={{ parser: 'fixed', hint: "won't fix", shift: 'open' }} />
+<CauseTable ticket={4471} />
+
+| problem | ticket | state |
+|---|---|---|
+| `parser`: the shared parser reads day-first dates month first | [#1](https://github.com/zalio-pl/mega-support-kb/issues/1) | fixed |
+| `hint`: booking-v3 tells day-first tenants to type `MM/DD/YYYY` | [#2](https://github.com/zalio-pl/mega-support-kb/issues/2) | won't fix: booking-v3 retired |
+| one-day move: dates shift a day earlier across time zones | [#3](https://github.com/zalio-pl/mega-support-kb/issues/3) | open |
 
 <Callout kind="warn">
-Closing #4471 did not close <code>shift</code>. One-day moves keep coming until a time-zone fix
+Closing #4471 did not close the one-day move. Those reports are filed under <code>parser</code> by
+tenant and only footnoted, so the parser fix hid them. They keep coming until a time-zone fix
 ships.
 </Callout>
 
 ## The three problems
 
-- **`parser`**: the shared parser reads every date month first, and every tenant writes the day
-  first. Day and month swap: 7 April arrives as 4 July. Fixed: `fix(dates): parse dd/mm for eu
-  locales`.
-- **`hint`**: booking-v3 prints `MM/DD/YYYY` under its date field. People at day-first tenants
-  type month first, as told, and the form reads it day first. It looks like the parser bug, but
-  the fix belongs in the form. Won't fix: booking-v3 is retired.
-- **`shift`**: no swap. The date moves one day earlier (Tuesday shows as Monday, Lisbon gets
-  Tuesday and Toronto gets Monday). Most likely a time zone or DST conversion. The desk had
-  already read these reports as one-day moves. Open: neither change above touches it.
-
-## How the reports were placed
-
-- Each report is counted once, by id. The ticket export repeats some rows.
-- The tenant decides the cause, not the reporter's browser. Intake's tag is a guess and is
-  ignored here (see `causes.ts`).
-- The desk's one-day reading (`desk-notes.json`) marks the `shift` reports. They stay counted under
-  their tenant's cause too, as the desk counts them.
+- **`parser`**: every tenant writes the day first and the parser reads the month first. Day and
+  month swap: 7 April arrives as 4 July.
+- **`hint`**: people type month first, as the booking-v3 hint tells them, and the form reads it
+  day first. It looks like the parser bug, but the fix belongs in the form.
+- **one-day move**: no swap. Tuesday shows as Monday; Lisbon gets Tuesday and Toronto Monday. Most
+  likely a time zone or DST conversion.
 
 ## Why they were merged
 
 [Decision 0001](/kb/decisions/0001-dedupe-by-subject) merges on subject line alone. All three
-problems produce the same subjects ("wrong day", "date is wrong"), so subject matching cannot keep
-them apart. Splitting them needs the tenant, the channel and the body.
+problems produce the same subjects, so subject matching cannot keep them apart. Splitting them
+needs the tenant, the channel and the body.
 
 <RenderStamp {signature} />
